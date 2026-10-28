@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where Should the Next Store Open?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: decision first (verdict band), then controls on the left and evidence on the right, then deep-dive and data. */
+:root{
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#16231F; --muted:#5A6B66; --line:#DCE3E0;
+  --accent:#0F6B5C; --accent-soft:#E2F1EE; --amber:#B7791F; --amber-soft:#FBF1DE;
+  --good:#1F7A3F; --good-soft:#DFF2E5; --bad:#B4372F; --bad-soft:#FBE5E3; --hold:#5B5FA8; --hold-soft:#E8E9F7;
+  --display:"Archivo", "Helvetica Neue", Arial, sans-serif; --body:"Source Sans 3", "Segoe UI", Arial, sans-serif; --mono:"IBM Plex Mono", Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1614; --surface:#17211E; --ink:#E6EEEB; --muted:#9AADA7; --line:#2A3833;
+  --accent:#4FC3AA; --accent-soft:#163A33; --amber:#E2A84B; --amber-soft:#3A2E17;
+  --good:#5FD08A; --good-soft:#173A25; --bad:#F08A80; --bad-soft:#3E1D1A; --hold:#A4A8F0; --hold-soft:#25264A; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0F1614; --surface:#17211E; --ink:#E6EEEB; --muted:#9AADA7; --line:#2A3833;
+  --accent:#4FC3AA; --accent-soft:#163A33; --amber:#E2A84B; --amber-soft:#3A2E17;
+  --good:#5FD08A; --good-soft:#173A25; --bad:#F08A80; --bad-soft:#3E1D1A; --hold:#A4A8F0; --hold-soft:#25264A; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 20px 60px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:28px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:700;display:flex;gap:10px;align-items:center}
+h3{font-size:15px;font-weight:700}
+.step{font-family:var(--mono);font-size:12px;background:var(--accent);color:var(--surface);border-radius:4px;padding:2px 7px}
+.sub{color:var(--muted);max-width:75ch}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:16px}
+.journey{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;color:var(--muted)}
+.journey span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.verdict{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:8px;padding:18px 20px;display:grid;grid-template-columns:1.2fr 1fr;gap:20px;margin-bottom:18px}
+.verdict .big{font-family:var(--display);font-size:26px;font-weight:800;color:var(--accent);line-height:1.2}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.kpi{background:var(--bg);border-radius:6px;padding:8px 10px}
+.kpi b{display:block;font-family:var(--mono);font-size:18px}
+.kpi small{color:var(--muted);font-size:12px}
+.why{margin:0;padding-left:18px}
+.why li{margin-bottom:6px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:18px}
+.ctrl{display:grid;grid-template-columns:1fr 54px;gap:2px 8px;align-items:center;margin-top:10px;font-size:14px}
+.ctrl label{grid-column:1/3;display:flex;justify-content:space-between}
+.ctrl label output{font-family:var(--mono);color:var(--accent);font-weight:500}
+input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent)}
+button{font-family:var(--body);font-weight:600;font-size:14px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{background:var(--accent-soft)}
+button.primary{background:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-family:var(--body);font-weight:700;text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid var(--line);padding:6px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:middle}
+td.r,th.r{text-align:right}
+tr.sel{background:var(--accent-soft)}
+tbody tr{cursor:pointer}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-open{background:var(--good-soft);color:var(--good)}
+.p-rej{background:var(--bad-soft);color:var(--bad)}
+.p-res{background:var(--amber-soft);color:var(--amber)}
+.p-hold{background:var(--hold-soft);color:var(--hold)}
+.bar{height:8px;background:var(--line);border-radius:4px;min-width:70px;position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+svg text{fill:var(--ink);font-family:var(--body)}
+svg .muted{fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+select{font-family:var(--body);font-size:15px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.dd{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;margin-top:12px}
+.wf-row{display:grid;grid-template-columns:190px 1fr 70px;gap:8px;align-items:center;font-size:13px;margin:4px 0}
+.wf-track{position:relative;height:16px}
+.wf-track i{position:absolute;top:0;bottom:0;border-radius:3px}
+.tradeoff{border-left:3px solid var(--amber);background:var(--amber-soft);padding:8px 12px;border-radius:4px;font-size:14px;margin-top:12px}
+input.cell{width:76px;font-family:var(--mono);font-size:13px;padding:3px 5px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);text-align:right}
+.warn{color:var(--bad);font-weight:600}
+details summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:16px}
+.assump{columns:2;column-gap:28px;font-size:14px}
+.assump p{break-inside:avoid;margin:0 0 8px}
+footer{margin-top:22px;font-size:13px;color:var(--muted)}
+footer a{color:var(--accent)}
+@media (max-width:900px){.grid,.verdict,.two,.dd{grid-template-columns:1fr}.assump{columns:1}.kpis{grid-template-columns:1fr 1fr 1fr}}
+@media (max-width:420px){.kpis{grid-template-columns:1fr}.wf-row{grid-template-columns:120px 1fr 60px}h1{font-size:23px}}
+@media (prefers-reduced-motion:no-preference){.bar i,.wf-track i{transition:width .25s ease,left .25s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Where should NammaBasket open its next stores?</h1>
+    <p class="sub" style="margin:6px 0 0">A mid-format supermarket chain with 6 stores in Bengaluru can fund about two more. Eight neighbourhoods are shortlisted. This tool turns demand, competition, rent, access and cannibalisation into one ranked, budget-constrained recommendation.</p>
+  </div>
+  <div class="journey" aria-label="How the tool works"><span>1 Inputs</span><span>2 Demand + P&amp;L</span><span>3 Financial gate</span><span>4 Weighted score</span><span>5 Pick within budget</span></div>
+</header>
+
+<section class="verdict" aria-live="polite">
+  <div>
+    <div style="font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Recommendation</div>
+    <div class="big" id="vPicks">-</div>
+    <div class="kpis">
+      <div class="kpi"><b id="vCapex">-</b><small>Capex used / budget (Rs Cr)</small></div>
+      <div class="kpi"><b id="vNpv">-</b><small>Combined 9-yr NPV (Rs Cr)</small></div>
+      <div class="kpi"><b id="vSales">-</b><small>Net new sales / yr (Rs Cr)</small></div>
+    </div>
+  </div>
+  <div><h3 style="margin-bottom:6px">Why, and what we give up</h3><ul class="why" id="vWhy"></ul></div>
+</section>
+
+<div class="grid">
+  <aside class="stack">
+    <div class="card">
+      <h2><span class="step">A</span>What matters most?</h2>
+      <p class="note">Weights auto-normalise to 100%.</p>
+      <div id="weights"></div>
+    </div>
+    <div class="card">
+      <h2><span class="step">B</span>Scenario levers</h2>
+      <div id="levers"></div>
+      <div class="btnrow"><button id="reset" type="button">Reset to base case</button><button id="stress" type="button">Stress test</button></div>
+      <p class="note">Stress test = rent +15%, one new competitor everywhere, transit entry 1%.</p>
+    </div>
+  </aside>
+
+  <main class="stack">
+    <div class="card">
+      <h2><span class="step">C</span>Ranked shortlist</h2>
+      <p class="note" style="margin-top:2px">Sites must pass the financial gate (payback within the limit and positive 9-yr NPV) before score counts. Click a row to inspect it.</p>
+      <div class="tablewrap"><table id="rank"><thead><tr>
+        <th>#</th><th>Location</th><th>Verdict</th><th>Score</th><th class="r">Sales<br>Rs Cr</th><th class="r">Cannib.</th><th class="r">Incr. EBITDA<br>Rs Cr</th><th class="r">Payback<br>yrs</th><th class="r">9-yr NPV<br>Rs Cr</th><th>Main reason</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>Map: existing stores and candidates</h3>
+        <svg id="map" viewBox="0 0 440 400" role="img" aria-label="Map of store locations" style="width:100%;height:auto"></svg>
+        <div class="legend"><span><i style="background:var(--ink);border-radius:2px"></i>Existing store (ring = cannibalisation zone)</span><span><i style="background:var(--good)"></i>Open</span><span><i style="background:var(--amber)"></i>Reserve/hold</span><span><i style="background:var(--bad)"></i>Reject</span></div>
+      </div>
+      <div class="card">
+        <h3>High footfall is not the same as value</h3>
+        <svg id="scatter" viewBox="0 0 440 400" role="img" aria-label="Footfall versus NPV" style="width:100%;height:auto"></svg>
+        <p class="note">Each dot is a candidate. The busiest sites sit lowest when footfall is mostly commuters, rent is high or sales come from our own stores.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<section class="card" style="margin-top:18px">
+  <h2><span class="step">D</span>Site deep-dive: <select id="site" aria-label="Choose site"></select></h2>
+  <div class="dd">
+    <div>
+      <h3>From sales to value for the chain (mature year, Rs Cr)</h3>
+      <div id="wf" style="margin-top:8px"></div>
+      <div id="demand" class="note"></div>
+    </div>
+    <div>
+      <h3>Score by criterion (0-100 vs other candidates)</h3>
+      <div id="crit" style="margin-top:8px"></div>
+      <div class="tradeoff" id="trade"></div>
+    </div>
+  </div>
+</section>
+
+<section class="card" style="margin-top:18px">
+  <h2><span class="step">E</span>Input data (editable)</h2>
+  <p class="note">Change a value and every number on the page recalculates. Coordinates are real locality centroids; other values are synthetic but calibrated to public benchmarks.</p>
+  <div class="tablewrap"><table id="data"><thead><tr><th>Location</th><th class="r">Population (1.5 km)</th><th class="r">HH income Rs/mo</th><th class="r">Daily footfall</th><th class="r">Resident share %</th><th class="r">Competitors (2 km)</th><th class="r">Rent Rs/sqft/mo</th><th class="r">Access 1-10</th><th class="r">Growth % p.a.</th></tr></thead><tbody></tbody></table></div>
+  <h3 style="margin-top:16px">Comparable store performance (used to calibrate the model)</h3>
+  <div class="tablewrap"><table id="exist"><thead><tr><th>Existing store</th><th class="r">Actual sales Rs Cr</th><th class="r">Model (raw)</th><th class="r">Model (calibrated)</th><th class="r">Error</th></tr></thead><tbody></tbody></table></div>
+  <p class="note" id="calibNote"></p>
+  <div class="btnrow"><button id="copy" type="button">Copy results as CSV</button><span id="copyMsg" class="note" style="margin:0"></span></div>
+</section>
+
+<section class="card" style="margin-top:18px">
+  <details open>
+    <summary>How the model works, assumptions and limitations</summary>
+    <div class="assump" style="margin-top:10px">
+      <p><b>Demand, two ways.</b> Wallet method: households x grocery wallet (14% of income) x organised share (rises with income) x our fair share against competitors and quick commerce (1.5 store-equivalents). Footfall method: passers-by x entry rate (12% residents, 2% commuters) x 75% conversion x average bill. The two are blended 50/50 and scaled by a calibration factor from our 6 existing stores.</p>
+      <p><b>Cannibalisation.</b> Share of new-store sales that our nearest existing store loses: 35% if next door, falling linearly to 0% at 8 km. That lost contribution is subtracted, so the model values incremental profit to the chain.</p>
+      <p><b>Store P&amp;L.</b> 10,000 sq ft store, 21% gross margin, staff Rs 1.1 Cr, fixed opex Rs 0.6 Cr, variable opex 5% of sales. Capex = fit-out Rs 2,200/sq ft + 6 months rent deposit + Rs 0.8 Cr inventory.</p>
+      <p><b>NPV.</b> 9-year lease, 12% WACC, ramp 70% / 90% / 100%, rent +5% and costs +6% a year, catchment growth applied to sales, no terminal value.</p>
+      <p><b>Decision rule.</b> Gate (payback within limit, NPV &gt; 0), then weighted score, then greedy pick within budget, skipping a site within 5 km of a site already picked.</p>
+      <p><b>Public benchmarks.</b> MoSPI HCES 2023-24 (urban MPCE Rs 6,996; food ~40% of spend); Census 2011 (BBMP ~8.4 million people); 2025 Bengaluru retail rents (high street Rs 176-326/sq ft/month, neighbourhood Rs 45-180); listed grocery chain productivity (~Rs 31,000-35,000 sales per sq ft per year).</p>
+      <p><b>Key limitation.</b> Locality data are synthetic and the demand model is calibrated on only 6 stores. Footfall and competitor counts must be validated with site visits, mobile-location data and a pilot before signing a 9-year lease.</p>
+      <p><b>Other limits.</b> Uniform store size; no competitor reaction modelled; cannibalisation uses straight-line distance, not travel time; quick commerce treated as a constant.</p>
+    </div>
+  </details>
+</section>
+<footer>Prototype by Siddhant Hota, XLRI Jamshedpur. NammaBasket is a fictional chain. Companion Excel model and build guide reproduce every number on this page.</footer>
+</div>
+
+<script>
+const BASE = {"A": {"hh_size": 3.8, "grocery_share": 0.14, "org_base": 0.1, "org_slope": 0.002, "org_cap": 0.4, "qc_weight": 1.5, "acc_norm": 7.0, "entry_res": 0.12, "entry_transit": 0.02, "conversion": 0.75, "basket_base": 350, "basket_slope": 2.5, "blend_w": 0.5, "store_sqft": 10000, "gm": 0.21, "staff": 11000000.0, "other_opex_pct": 0.05, "fixed_opex": 6000000.0, "fitout_psf": 2200, "deposit_months": 6, "inventory": 8000000.0, "rent_esc": 0.05, "cost_inf": 0.06, "cannib_max": 0.35, "cannib_radius": 8.0, "ramp": [0.7, 0.9, 1, 1, 1, 1, 1, 1, 1], "wacc": 0.12, "budget": 80000000.0, "max_payback": 4.0, "min_pair_km": 5.0, "days": 365}, "W": {"demand": 0.2, "profit": 0.3, "competition": 0.1, "rent": 0.1, "access": 0.1, "cannib": 0.15, "growth": 0.05}, "cands": [["Whitefield", 12.9698, 77.75, 105000, 125000, 24000, 0.35, 7, 145, 8, 0.045], ["Marathahalli", 12.9569, 77.7011, 105000, 95000, 32000, 0.25, 7, 150, 6, 0.035], ["Bellandur", 12.926, 77.6762, 110000, 135000, 16000, 0.55, 5, 130, 4, 0.05], ["Sarjapur Road", 12.907, 77.699, 95000, 120000, 12000, 0.7, 3, 95, 5, 0.07], ["Hebbal", 13.0358, 77.597, 100000, 105000, 15000, 0.6, 4, 120, 7, 0.04], ["Electronic City", 12.8452, 77.6602, 90000, 95000, 20000, 0.4, 4, 75, 7, 0.05], ["Kanakapura Road", 12.8856, 77.564, 105000, 85000, 13000, 0.8, 2, 65, 8, 0.055], ["Yelahanka", 13.1007, 77.5963, 85000, 80000, 11000, 0.75, 2, 70, 6, 0.045]], "existing": [["Koramangala", 12.9352, 77.6245, 110000, 115000, 19000, 0.55, 6, 165, 8, 0.02, 31.5], ["Indiranagar", 12.9784, 77.6408, 95000, 130000, 21000, 0.45, 6, 180, 9, 0.015, 30.2], ["Jayanagar", 12.925, 77.5938, 120000, 95000, 17000, 0.7, 5, 140, 8, 0.01, 29.8], ["Malleshwaram", 13.0035, 77.5709, 100000, 90000, 15000, 0.7, 4, 130, 7, 0.01, 26.1], ["HSR Layout", 12.9116, 77.6474, 105000, 110000, 16000, 0.65, 5, 120, 6, 0.03, 28.4], ["Rajajinagar", 12.9915, 77.5545, 115000, 80000, 14000, 0.75, 4, 110, 7, 0.01, 24.0]]};
+const clone = o => JSON.parse(JSON.stringify(o));
+let A = clone(BASE.A), W = clone(BASE.W), C = clone(BASE.cands), E = BASE.existing;
+let lever = {rentShock:0, compAdd:0};
+let selected = null;
+
+const BEST = {demand:"demand potential",profit:"profitability",competition:"low competition",rent:"low rent",access:"accessibility",cannib:"little cannibalisation",growth:"catchment growth"};
+const WEAK = {demand:"thinner demand",profit:"weaker profitability",competition:"crowded competition",rent:"high rent burden",access:"weaker accessibility",cannib:"cannibalisation of our own store",growth:"slower catchment growth"};
+const WL = {demand:"Demand potential",profit:"Profitability (NPV)",competition:"Low competition",rent:"Low rent burden",access:"Accessibility",cannib:"Low cannibalisation",growth:"Catchment growth"};
+const LEVERS = [
+ {k:"budget", lab:"Capex budget (Rs Cr)", min:3, max:15, step:0.5, scale:1e7, fmt:v=>v.toFixed(1)},
+ {k:"max_payback", lab:"Max payback (years)", min:2, max:6, step:0.5, scale:1, fmt:v=>v.toFixed(1)},
+ {k:"gm", lab:"Gross margin", min:0.16, max:0.26, step:0.005, scale:1, fmt:v=>(v*100).toFixed(1)+"%"},
+ {k:"entry_transit", lab:"Commuter entry rate", min:0.005, max:0.06, step:0.005, scale:1, fmt:v=>(v*100).toFixed(1)+"%"},
+ {k:"cannib_max", lab:"Max cannibalisation", min:0, max:0.6, step:0.05, scale:1, fmt:v=>Math.round(v*100)+"%"},
+ {k:"qc_weight", lab:"Quick-commerce pull (stores)", min:0, max:4, step:0.5, scale:1, fmt:v=>v.toFixed(1)},
+ {k:"rentShock", lab:"Rent shock, all sites", min:-0.2, max:0.4, step:0.05, scale:1, fmt:v=>(v>=0?"+":"")+Math.round(v*100)+"%", local:true},
+ {k:"compAdd", lab:"New competitors per site", min:0, max:3, step:1, scale:1, fmt:v=>"+"+v, local:true},
+];
+
+function hav(a,b,c,d){const R=6371,r=x=>x*Math.PI/180;const dp=r(c-a),dl=r(d-b);return 2*R*Math.asin(Math.sqrt(Math.sin(dp/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dl/2)**2));}
+function demand(pop,inc,ff,res,comp,acc){
+  const hh=pop/A.hh_size, wallet=inc*A.grocery_share, org=Math.min(A.org_cap,A.org_base+A.org_slope*inc/1000);
+  const af=acc/A.acc_norm, share=af/(af+comp+A.qc_weight);
+  const sA=hh*wallet*org*share*12;
+  const basket=A.basket_base+A.basket_slope*inc/1000;
+  const bills=(ff*res*A.entry_res+ff*(1-res)*A.entry_transit)*A.conversion;
+  return {sA, sB:bills*basket*A.days, share, bills, basket};
+}
+function run(){
+  // calibration on existing stores (no levers applied: these are actuals)
+  let pred=0, act=0; const ex=E.map(e=>{const d=demand(e[3],e[4],e[5],e[6],e[7],e[9]);const p=A.blend_w*d.sA+(1-A.blend_w)*d.sB;pred+=p;act+=e[11]*1e7;return {name:e[0],raw:p/1e7,act:e[11]};});
+  const calib=act/pred; ex.forEach(x=>{x.cal=x.raw*calib;x.err=Math.abs(x.cal-x.act)/x.act;});
+  const out=C.map(c=>{
+    const [n,la,lo,pop,inc,ff,res,comp0,rent0,acc,g]=c;
+    const comp=comp0+lever.compAdd, rent=rent0*(1+lever.rentShock);
+    const d=demand(pop,inc,ff,res,comp,acc);
+    const gross=(A.blend_w*d.sA+(1-A.blend_w)*d.sB)*calib;
+    let near=null,dist=1e9; E.forEach(e=>{const k=hav(la,lo,e[1],e[2]); if(k<dist){dist=k;near=e[0];}});
+    const can=Math.max(0,A.cannib_max*(1-dist/A.cannib_radius));
+    const rentY=rent*A.store_sqft*12, fixed=A.staff+A.fixed_opex;
+    const gp=gross*A.gm, vop=gross*A.other_opex_pct;
+    const ebitda=gp-rentY-fixed-vop, lost=gross*can*(A.gm-A.other_opex_pct), inc_e=ebitda-lost;
+    const capex=A.fitout_psf*A.store_sqft+A.deposit_months*rent*A.store_sqft+A.inventory;
+    let pv=0; A.ramp.forEach((r,y)=>{const s=gross*r*(1+g)**y;
+      const cf=s*A.gm-rentY*(1+A.rent_esc)**y-fixed*(1+A.cost_inf)**y-s*A.other_opex_pct-s*can*(A.gm-A.other_opex_pct);
+      pv+=cf/(1+A.wacc)**(y+1);});
+    const npv=pv-capex, payback=inc_e>0?capex/inc_e:99;
+    return {name:n,lat:la,lon:lo,ff,res,comp,rent,acc,g,inc,sA:d.sA/1e7,sB:d.sB/1e7,div:Math.abs(d.sA-d.sB)/Math.max(d.sA,d.sB),
+      gross:gross/1e7,near,dist,can,net:gross*(1-can)/1e7,rentY:rentY/1e7,gp:gp/1e7,vop:vop/1e7,fixed:fixed/1e7,ebitda:ebitda/1e7,lost:lost/1e7,inc_e:inc_e/1e7,
+      capex:capex/1e7,payback,npv:npv/1e7,rentpct:rentY/gross};
+  });
+  const crit={demand:["gross",1],profit:["npv",1],competition:["comp",-1],rent:["rentpct",-1],access:["acc",1],cannib:["can",-1],growth:["g",1]};
+  const wsum=Object.values(W).reduce((a,b)=>a+b,0)||1;
+  for(const k in crit){const [f,s]=crit[k];const v=out.map(o=>o[f]);const lo=Math.min(...v),hi=Math.max(...v);
+    out.forEach(o=>{const x=hi>lo?(o[f]-lo)/(hi-lo):1;o["s_"+k]=100*(s>0?x:1-x);});}
+  out.forEach(o=>{o.score=Object.keys(crit).reduce((a,k)=>a+W[k]/wsum*o["s_"+k],0);o.gate=o.payback<=A.max_payback&&o.npv>0;});
+  const rank=[...out].sort((a,b)=>(b.gate-a.gate)||(b.score-a.score));
+  let spent=0; const picks=[];
+  rank.forEach(o=>{
+    const tooClose=picks.find(p=>hav(o.lat,o.lon,p.lat,p.lon)<A.min_pair_km);
+    if(!o.gate){o.verdict=o.inc_e<=0?"Reject":"Reject";o.vclass="p-rej";o.reason=o.inc_e<=0?"Loses money even at maturity":(o.payback>A.max_payback?`Payback ${o.payback.toFixed(1)} yrs breaches ${A.max_payback} yr limit`:"Negative NPV over the lease");}
+    else if(tooClose){o.verdict="Hold";o.vclass="p-hold";o.reason=`Within ${A.min_pair_km} km of ${tooClose.name}`;}
+    else if(spent+o.capex>A.budget/1e7+1e-9){o.verdict="Reserve";o.vclass="p-res";o.reason="Passes gate; next in line if budget grows";}
+    else {o.verdict="Open";o.vclass="p-open";spent+=o.capex;picks.push(o);o.reason="Best score among sites that pass the gate";}
+  });
+  rank.forEach(o=>{const ks=Object.keys(crit).sort((a,b)=>o["s_"+b]-o["s_"+a]);o.best=ks.slice(0,2);o.worst=ks[ks.length-1];
+    if(o.verdict==="Reject"){ if(o.can>=0.12) o.reason+=`; ${Math.round(o.can*100)}% of sales taken from ${o.near}`; else if(o.ff>=20000&&o.res<0.45) o.reason+="; footfall is mostly commuters"; else if(o.rentpct>0.06) o.reason+="; rent above 6% of sales"; }});
+  return {rank,picks,spent,calib,ex,mape:ex.reduce((a,x)=>a+x.err,0)/ex.length};
+}
+const f1=v=>v.toFixed(1), f2=v=>(v<0?"("+Math.abs(v).toFixed(2)+")":v.toFixed(2));
+function render(){
+  const R=run(); const {rank,picks}=R;
+  if(!selected||!rank.find(o=>o.name===selected)) selected=(picks[0]||rank[0]).name;
+  // verdict
+  document.getElementById("vPicks").textContent=picks.length?picks.map(p=>p.name).join("  +  "):"No site clears the gate";
+  document.getElementById("vCapex").textContent=f1(R.spent)+" / "+f1(A.budget/1e7);
+  document.getElementById("vNpv").textContent=f1(picks.reduce((a,p)=>a+p.npv,0));
+  document.getElementById("vSales").textContent=f1(picks.reduce((a,p)=>a+p.net,0));
+  const why=[];
+  picks.forEach(p=>why.push(`<b>${p.name}</b>: strongest on ${BEST[p.best[0]]} and ${BEST[p.best[1]]}; payback ${f1(p.payback)} yrs. Watch-out: ${WEAK[p.worst]}.`));
+  const nxt=rank.find(o=>o.verdict==="Reserve"||o.verdict==="Hold");
+  if(nxt&&picks.length){const last=picks[picks.length-1];why.push(`<b>Trade-off:</b> ${nxt.name} is next (score ${f1(nxt.score)} vs ${f1(last.score)}). It is stronger on ${BEST[nxt.best[0]]} but held back by ${WEAK[nxt.worst]}.`);}
+  const ff=[...rank].sort((a,b)=>b.ff-a.ff)[0];
+  if(ff.verdict==="Reject") why.push(`<b>Footfall trap:</b> ${ff.name} has the highest footfall (${ff.ff.toLocaleString("en-IN")}/day) but ${ff.reason.toLowerCase()}.`);
+  document.getElementById("vWhy").innerHTML=why.map(w=>`<li>${w}</li>`).join("");
+  // rank table
+  document.querySelector("#rank tbody").innerHTML=rank.map((o,i)=>`<tr data-n="${o.name}" class="${o.name===selected?"sel":""}" tabindex="0">
+    <td class="num">${i+1}</td><td><b>${o.name}</b></td><td><span class="pill ${o.vclass}">${o.verdict}</span></td>
+    <td><div style="display:flex;gap:6px;align-items:center"><span class="num" style="width:32px">${Math.round(o.score)}</span><div class="bar"><i style="width:${o.score}%"></i></div></div></td>
+    <td class="r num">${f1(o.gross)}</td><td class="r num">${Math.round(o.can*100)}%</td><td class="r num">${f2(o.inc_e)}</td><td class="r num">${o.payback>50?"n/a":f1(o.payback)}</td>
+    <td class="r num" style="color:${o.npv>0?"var(--good)":"var(--bad)"}">${f2(o.npv)}</td><td style="font-size:13px;color:var(--muted);min-width:220px">${o.reason}</td></tr>`).join("");
+  document.querySelectorAll("#rank tbody tr").forEach(tr=>{const go=()=>{selected=tr.dataset.n;render();};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go();};});
+  drawMap(rank); drawScatter(rank); deepDive(rank);
+  // existing table
+  document.querySelector("#exist tbody").innerHTML=R.ex.map(x=>`<tr><td>${x.name}</td><td class="r num">${f1(x.act)}</td><td class="r num">${f1(x.raw)}</td><td class="r num">${f1(x.cal)}</td><td class="r num">${(x.err*100).toFixed(1)}%</td></tr>`).join("");
+  document.getElementById("calibNote").textContent=`Calibration factor ${R.calib.toFixed(3)}: the raw formula under-predicts mature stores, so candidate sales are scaled up by this factor. Mean error after calibration: ${(R.mape*100).toFixed(1)}%.`;
+  window._last=rank;
+}
+const col=o=>o.verdict==="Open"?"var(--good)":o.verdict==="Reject"?"var(--bad)":"var(--amber)";
+function drawMap(rank){
+  const s=document.getElementById("map"), all=[...E.map(e=>[e[1],e[2]]),...rank.map(o=>[o.lat,o.lon])];
+  const la=all.map(a=>a[0]),lo=all.map(a=>a[1]);const pad=0.03;
+  const minLa=Math.min(...la)-pad,maxLa=Math.max(...la)+pad,minLo=Math.min(...lo)-pad,maxLo=Math.max(...lo)+pad;
+  const kx=Math.cos(12.97*Math.PI/180), w=440,h=400, sc=Math.min((w-20)/((maxLo-minLo)*kx),(h-20)/(maxLa-minLa));
+  const X=v=>10+(v-minLo)*kx*sc+((w-20)-(maxLo-minLo)*kx*sc)/2, Y=v=>10+(maxLa-v)*sc+((h-20)-(maxLa-minLa)*sc)/2;
+  const kmPx=sc/111; const rr=A.cannib_radius*0.5*kmPx;
+  let g=`<rect x="0" y="0" width="${w}" height="${h}" fill="var(--bg)" rx="6"/>`;
+  E.forEach(e=>{g+=`<circle cx="${X(e[2])}" cy="${Y(e[1])}" r="${rr}" fill="var(--ink)" fill-opacity=".05" stroke="var(--ink)" stroke-opacity=".18" stroke-dasharray="3 3"/>`;});
+  E.forEach(e=>{g+=`<rect x="${X(e[2])-5}" y="${Y(e[1])-5}" width="10" height="10" fill="var(--ink)"/><text x="${X(e[2])+8}" y="${Y(e[1])+4}" font-size="10" class="muted">${e[0]}</text>`;});
+  rank.forEach(o=>{const r=4+o.gross/4;const selc=o.name===selected;
+    g+=`<circle cx="${X(o.lon)}" cy="${Y(o.lat)}" r="${r}" fill="${col(o)}" fill-opacity=".85" stroke="${selc?"var(--ink)":"var(--surface)"}" stroke-width="${selc?2.5:1.5}"/>
+    <text x="${X(o.lon)+r+3}" y="${Y(o.lat)+4}" font-size="11" font-weight="700">${o.name}</text>`;});
+  g+=`<line x1="20" y1="${h-18}" x2="${20+5*kmPx}" y2="${h-18}" stroke="var(--muted)" stroke-width="2"/><text x="20" y="${h-24}" font-size="10" class="muted">5 km</text>`;
+  g+=`<text x="${w-12}" y="${h-12}" font-size="10" text-anchor="end" class="muted">Dot size = sales. Ring radius = ${A.cannib_radius/2} km</text>`;
+  s.innerHTML=g;
+}
+function drawScatter(rank){
+  const s=document.getElementById("scatter"),w=440,h=400,m={l:52,r:16,t:16,b:44};
+  const xs=rank.map(o=>o.ff),ys=rank.map(o=>o.npv);
+  const x0=0,x1=Math.ceil(Math.max(...xs)/5000)*5000; let y0=Math.floor(Math.min(...ys,0)/2)*2,y1=Math.ceil(Math.max(...ys,0)/2)*2; if(y1===y0)y1=y0+2;
+  const X=v=>m.l+(v-x0)/(x1-x0)*(w-m.l-m.r), Y=v=>m.t+(y1-v)/(y1-y0)*(h-m.t-m.b);
+  let g="";
+  for(let v=y0;v<=y1;v+=2){g+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" ${v===0?'stroke-width="2" stroke="var(--muted)"':""}/><text x="${m.l-6}" y="${Y(v)+4}" font-size="11" text-anchor="end" class="muted">${v}</text>`;}
+  for(let v=x0;v<=x1;v+=5000){g+=`<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h-m.b}" stroke="var(--line)"/><text x="${X(v)}" y="${h-m.b+16}" font-size="11" text-anchor="middle" class="muted">${v/1000}k</text>`;}
+  g+=`<text x="${(w+m.l)/2}" y="${h-8}" font-size="12" text-anchor="middle" class="muted">Daily footfall past the site</text>`;
+  g+=`<text transform="translate(14 ${(h-m.b+m.t)/2}) rotate(-90)" font-size="12" text-anchor="middle" class="muted">9-yr NPV to chain (Rs Cr)</text>`;
+  rank.forEach(o=>{const cx=X(o.ff),cy=Y(o.npv);const right=cx<w-120;
+    g+=`<circle cx="${cx}" cy="${cy}" r="${o.name===selected?8:6}" fill="${col(o)}" stroke="var(--surface)" stroke-width="1.5"/>
+    <text x="${right?cx+10:cx-10}" y="${cy+4}" font-size="11" text-anchor="${right?"start":"end"}" font-weight="${o.name===selected?700:400}">${o.name}</text>`;});
+  s.innerHTML=g;
+}
+function deepDive(rank){
+  const sel=document.getElementById("site");
+  if(!sel.options.length){C.forEach(c=>{const op=document.createElement("option");op.value=c[0];op.textContent=c[0];sel.appendChild(op);});sel.onchange=()=>{selected=sel.value;render();};}
+  sel.value=selected; const o=rank.find(r=>r.name===selected);
+  const steps=[["Gross sales",o.gross,"base"],["Cost of goods",-(o.gross-o.gp),"neg"],["Rent",-o.rentY,"neg"],["Staff + fixed opex",-o.fixed,"neg"],["Variable opex",-o.vop,"neg"],["Store EBITDA",o.ebitda,"sub"],["Lost at "+o.near,-o.lost,"neg"],["Incremental EBITDA",o.inc_e,"sub"]];
+  // scale on gross-profit level for readability (sales bar shown capped)
+  const maxV=o.gp*1.05; let run=o.gp; let html="";
+  steps.forEach(([lab,v,t],i)=>{
+    let left,width,color;
+    if(i===0){left=0;width=100;color="var(--line)";}
+    else if(i===1){left=0;width=o.gp/maxV*100;color="var(--accent)";lab="Gross profit (after cost of goods)";v=o.gp;}
+    else if(t==="neg"){const a=run+v;left=Math.max(0,Math.min(a,run))/maxV*100;width=Math.abs(v)/maxV*100;color="var(--bad)";run=a;}
+    else {left=Math.min(0,v)<0?0:0;width=Math.max(0,v)/maxV*100;color=v>=0?"var(--good)":"var(--bad)";run=v;}
+    html+=`<div class="wf-row"><span>${lab}</span><div class="wf-track"><i style="left:${left}%;width:${Math.max(width,0.5)}%;background:${color}"></i></div><span class="num" style="text-align:right">${f2(v)}</span></div>`;
+  });
+  document.getElementById("wf").innerHTML=html+`<p class="note">Bars after the first are drawn to the gross-profit scale. Capex ${f2(o.capex)} Cr, payback ${o.payback>50?"n/a":f1(o.payback)+" yrs"}, 9-yr NPV ${f2(o.npv)} Cr.</p>`;
+  document.getElementById("demand").innerHTML=`Demand check: wallet method Rs ${f1(o.sA)} Cr vs footfall method Rs ${f1(o.sB)} Cr (gap ${Math.round(o.div*100)}%${o.div>0.3?' <span class="warn">high: validate on site</span>':""}). Nearest store ${o.near}, ${f1(o.dist)} km away, so ${Math.round(o.can*100)}% of sales are cannibalised.`;
+  document.getElementById("crit").innerHTML=Object.keys(WL).map(k=>`<div class="wf-row"><span>${WL[k]} <span class="muted num" style="color:var(--muted)">(${Math.round(W[k]/Object.values(W).reduce((a,b)=>a+b,0)*100)}%)</span></span><div class="bar" style="height:12px"><i style="width:${o["s_"+k]}%;background:${o["s_"+k]>=70?"var(--good)":o["s_"+k]<=30?"var(--bad)":"var(--accent)"}"></i></div><span class="num" style="text-align:right">${Math.round(o["s_"+k])}</span></div>`).join("");
+  const t={ "Kanakapura Road":"Low rent (2.6% of sales), only 2 competitors and a metro line make it the most profitable site. The cost is ~11% cannibalisation of Jayanagar, which the model already deducts.",
+    "Whitefield":"Biggest sales and no cannibalisation, but 7 competitors and Rs 145 rent. Its result is the most sensitive to a new competitor or a rent hike: try the stress test.",
+    "Sarjapur Road":"Fastest-growing catchment and cheap rent, but weaker access and ~10% cannibalisation of HSR Layout. Wins slot 2 if management weights competition over demand.",
+    "Electronic City":"Cheap rent and almost no cannibalisation, but much of the footfall is office commuters, so demand is thin.",
+    "Yelahanka":"Little competition and cheap rent, but the smallest wallet. Fails payback today; a watch-list site as the north grows.",
+    "Hebbal":"Healthy demand on paper, but 4.6 km from Malleshwaram: ~15% of its sales would come from our own store.",
+    "Bellandur":"Richest catchment, but 3.5 km from HSR Layout (20% cannibalisation) and the worst access. Gross sales look fine; value to the chain does not.",
+    "Marathahalli":"Highest footfall in the shortlist, but three in four passers-by are commuters, rent is the highest and there are 7 competitors. Classic footfall trap."};
+  document.getElementById("trade").innerHTML=`<b>Trade-off.</b> ${t[o.name]||""} <br><span style="color:var(--muted)">Model view now: ${o.verdict.toLowerCase()} (${o.reason.toLowerCase()}).</span>`;
+}
+// controls
+function buildControls(){
+  const wdiv=document.getElementById("weights"); wdiv.innerHTML="";
+  Object.keys(WL).forEach(k=>{const id="w_"+k;const d=document.createElement("div");d.className="ctrl";
+    d.innerHTML=`<label for="${id}">${WL[k]}<output id="o_${id}"></output></label><input type="range" id="${id}" min="0" max="50" step="5" value="${Math.round(W[k]*100)}">`;
+    wdiv.appendChild(d);const inp=d.querySelector("input");inp.oninput=()=>{W[k]=inp.value/100;updW();render();};});
+  updW();
+  const ldiv=document.getElementById("levers"); ldiv.innerHTML="";
+  LEVERS.forEach(L=>{const id="l_"+L.k;const cur=L.local?lever[L.k]:A[L.k]/L.scale;const d=document.createElement("div");d.className="ctrl";
+    d.innerHTML=`<label for="${id}">${L.lab}<output id="o_${id}">${L.fmt(cur)}</output></label><input type="range" id="${id}" min="${L.min}" max="${L.max}" step="${L.step}" value="${cur}">`;
+    ldiv.appendChild(d);const inp=d.querySelector("input");inp.oninput=()=>{const v=+inp.value;if(L.local)lever[L.k]=v;else A[L.k]=v*L.scale;document.getElementById("o_"+id).textContent=L.fmt(v);render();};});
+}
+function updW(){const s=Object.values(W).reduce((a,b)=>a+b,0)||1;Object.keys(W).forEach(k=>{const o=document.getElementById("o_w_"+k);if(o)o.textContent=Math.round(W[k]/s*100)+"%";});}
+function buildData(){
+  const fields=[[3,1,"pop"],[4,1,"inc"],[5,1,"ff"],[6,100,"res"],[7,1,"comp"],[8,1,"rent"],[9,1,"acc"],[10,100,"g"]];
+  document.querySelector("#data tbody").innerHTML=C.map((c,i)=>`<tr><td><b>${c[0]}</b></td>${fields.map(([j,m])=>`<td class="r"><input class="cell" id="d_${i}_${j}" aria-label="${c[0]} field ${j}" type="number" value="${+(c[j]*m).toFixed(2)}"></td>`).join("")}</tr>`).join("");
+  C.forEach((c,i)=>fields.forEach(([j,m])=>{const el=document.getElementById(`d_${i}_${j}`);el.onchange=()=>{const v=parseFloat(el.value);if(!isNaN(v)){C[i][j]=v/m;render();}};}));
+}
+document.getElementById("reset").onclick=()=>{A=clone(BASE.A);W=clone(BASE.W);C=clone(BASE.cands);lever={rentShock:0,compAdd:0};buildControls();buildData();render();};
+document.getElementById("stress").onclick=()=>{lever={rentShock:0.15,compAdd:1};A.entry_transit=0.01;buildControls();render();};
+document.getElementById("copy").onclick=async()=>{
+  const rows=[["rank","location","verdict","score","gross_sales_cr","cannibalisation","incremental_ebitda_cr","payback_yrs","npv_cr","reason"],...window._last.map((o,i)=>[i+1,o.name,o.verdict,o.score.toFixed(1),o.gross.toFixed(2),o.can.toFixed(3),o.inc_e.toFixed(2),o.payback.toFixed(2),o.npv.toFixed(2),'"'+o.reason+'"'])];
+  const msg=document.getElementById("copyMsg");
+  try{await navigator.clipboard.writeText(rows.map(r=>r.join(",")).join("\n"));msg.textContent="Copied. Paste into Excel or Sheets.";}catch(e){msg.textContent="Copy was blocked by the browser. Select the table and copy it instead.";}
+};
+buildControls(); buildData(); render();
+</script>
+</body>
+</html>

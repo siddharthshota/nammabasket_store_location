@@ -1,0 +1,7 @@
+store,lat,lon,pop_1_5km,median_hh_income_inr_month,daily_footfall,resident_share,organised_competitors_2km,rent_inr_sqft_month,accessibility_1_10,catchment_growth_pa,actual_annual_sales_cr
+Koramangala,12.9352,77.6245,110000,115000,19000,0.55,6,165,8,0.02,31.5
+Indiranagar,12.9784,77.6408,95000,130000,21000,0.45,6,180,9,0.015,30.2
+Jayanagar,12.925,77.5938,120000,95000,17000,0.7,5,140,8,0.01,29.8
+Malleshwaram,13.0035,77.5709,100000,90000,15000,0.7,4,130,7,0.01,26.1
+HSR Layout,12.9116,77.6474,105000,110000,16000,0.65,5,120,6,0.03,28.4
+Rajajinagar,12.9915,77.5545,115000,80000,14000,0.75,4,110,7,0.01,24.0

@@ -1,0 +1,9 @@
+name,gross,nearest,dist,cannib,net,rentpct,ebitda,inc_ebitda,capex,payback,npv,score,gate
+Kanakapura Road,29.474,Jayanagar,5.443,0.112,26.177,0.026,2.236,1.708,3.39,1.984,5.969,87.227,True
+Whitefield,30.601,Indiranagar,11.871,0,30.601,0.057,1.456,1.456,3.87,2.658,2.685,73.36,True
+Sarjapur Road,27.211,HSR Layout,5.616,0.104,24.373,0.042,1.514,1.06,3.57,3.369,3.093,66.852,True
+Electronic City,23.051,HSR Layout,7.513,0.021,22.559,0.039,1.088,1.009,3.45,3.418,1.263,61.952,True
+Yelahanka,19.829,Malleshwaram,11.153,0,19.829,0.042,0.633,0.633,3.42,5.405,-1.26,52.022,False
+Hebbal,26.936,Malleshwaram,4.571,0.15,22.895,0.053,1.17,0.523,3.72,7.11,-2.852,45.886,False
+Bellandur,26.907,HSR Layout,3.508,0.197,21.619,0.058,1.045,0.199,3.78,18.992,-4.115,30.499,False
+Marathahalli,22.229,Indiranagar,6.958,0.046,21.215,0.081,0.057,-0.106,3.9,99,-7.182,20.974,False

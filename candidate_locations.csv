@@ -1,0 +1,9 @@
+location,lat,lon,pop_1_5km,median_hh_income_inr_month,daily_footfall,resident_share,organised_competitors_2km,rent_inr_sqft_month,accessibility_1_10,catchment_growth_pa
+Whitefield,12.9698,77.75,105000,125000,24000,0.35,7,145,8,0.045
+Marathahalli,12.9569,77.7011,105000,95000,32000,0.25,7,150,6,0.035
+Bellandur,12.926,77.6762,110000,135000,16000,0.55,5,130,4,0.05
+Sarjapur Road,12.907,77.699,95000,120000,12000,0.7,3,95,5,0.07
+Hebbal,13.0358,77.597,100000,105000,15000,0.6,4,120,7,0.04
+Electronic City,12.8452,77.6602,90000,95000,20000,0.4,4,75,7,0.05
+Kanakapura Road,12.8856,77.564,105000,85000,13000,0.8,2,65,8,0.055
+Yelahanka,13.1007,77.5963,85000,80000,11000,0.75,2,70,6,0.045
